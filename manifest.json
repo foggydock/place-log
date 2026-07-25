@@ -1,0 +1,13 @@
+{
+  "name": "行った場所ノート",
+  "short_name": "場所ノート",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#141a1f",
+  "theme_color": "#1f2a33",
+  "icons": [
+    { "src": "icons/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" }
+  ]
+}

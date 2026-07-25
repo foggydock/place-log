@@ -1,0 +1,15 @@
+# 注：js/config.js は publishable key（公開しても安全）+ URL のみ。
+# デプロイに必要なのでコミットする。秘密の secret key は絶対にここに入れないこと。
+# （config.js はあえて除外しない。video-box / Sou_Diary と同じ運用：非公開リポなのでコミットOK）
+
+# OS / ローカル開発用
+.DS_Store
+*.swp
+.claude/
+
+# 書き出したバックアップは git に入れない
+data/
+backup/
+*.backup.json
+行った場所ノート_backup_*.json
+行った場所ノート_backup_*.md

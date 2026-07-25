@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1f2a33">
+  <title>行った場所ノート</title>
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=1">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+
+  <header id="app-header" class="app-header" style="display:none">
+    <div class="brand"><span class="brand-icon">📍</span><span class="brand-name">行った場所ノート</span></div>
+    <div class="header-actions">
+      <span id="place-count" class="count-badge"></span>
+      <button id="btn-new" class="btn btn-primary">＋ 行った場所</button>
+      <button id="btn-backup" class="btn btn-ghost" title="バックアップ">💾</button>
+      <button id="btn-logout" class="btn btn-ghost">ログアウト</button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ログイン -->
+    <section id="view-login" class="view active">
+      <div class="login-card">
+        <div class="login-icon">📍</div>
+        <h1 class="login-title">行った場所ノート</h1>
+        <p class="login-sub">行ったことのある場所を、自分の言葉で残す。</p>
+        <form id="login-form" class="login-form">
+          <label>メールアドレス
+            <input id="login-email" type="email" autocomplete="username" required>
+          </label>
+          <label>パスワード
+            <input id="login-password" type="password" autocomplete="current-password" required>
+          </label>
+          <button id="btn-login" type="submit" class="btn btn-primary btn-block">ログイン</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 一覧 -->
+    <section id="view-list" class="view">
+      <div class="search-row">
+        <input id="search-input" class="search-input" type="search" placeholder="🔍 名前・ジャンル・エリア・タグ・メモで検索">
+      </div>
+
+      <div class="control-row">
+        <label class="sort-label">並び替え
+          <select id="sort-select" class="sort-select">
+            <option value="recent">最近行った順</option>
+            <option value="stale">ごぶさた順</option>
+            <option value="stars">よかった順</option>
+            <option value="revisit">また行きたい順</option>
+            <option value="count">よく行く順</option>
+            <option value="created">追加が新しい順</option>
+            <option value="name">名前順</option>
+          </select>
+        </label>
+        <button type="button" id="btn-map-toggle" class="btn btn-ghost btn-sm">🗺️ 地図を出す</button>
+      </div>
+
+      <div id="map-wrap" class="map-wrap hidden">
+        <div id="map"></div>
+        <div id="map-empty" class="map-empty" style="display:none">
+          この条件にピンの立つ場所がありません。場所を登録するときに「📍 現在地をとる」を押すとピンが立ちます。
+        </div>
+      </div>
+
+      <div id="genre-filter" class="chip-row" style="display:none"></div>
+      <div id="tag-filter" class="chip-row" style="display:none"></div>
+
+      <div id="place-grid" class="place-grid"></div>
+      <div id="list-empty" class="empty" style="display:none"></div>
+    </section>
+
+    <!-- 詳細（訪問履歴） -->
+    <section id="view-detail" class="view">
+      <div class="detail-head">
+        <button type="button" id="btn-detail-back" class="btn btn-ghost btn-sm">← 一覧</button>
+        <div class="spacer"></div>
+        <button type="button" id="btn-detail-edit" class="btn btn-ghost btn-sm">✏️ なおす</button>
+      </div>
+
+      <h2 id="detail-name" class="detail-name"></h2>
+      <div id="detail-badges" class="card-badges"></div>
+      <div id="detail-info" class="detail-info"></div>
+
+      <div class="visit-head">
+        <h3 id="detail-visit-count" class="visit-title"></h3>
+        <button type="button" id="btn-add-visit" class="btn btn-primary btn-sm">＋ また行った</button>
+      </div>
+      <ul id="visit-list" class="visit-list"></ul>
+    </section>
+
+    <!-- 追加・編集 -->
+    <section id="view-form" class="view">
+      <form id="place-form" class="place-form" autocomplete="off">
+        <h2 id="form-title" class="form-title">行った場所をいれる</h2>
+
+        <label class="field">場所の名前 <span class="req">必須</span>
+          <input id="f-name" type="text" placeholder="例：喫茶ソウ　／　金沢21世紀美術館">
+        </label>
+
+        <label class="field">ジャンル（自分の言葉でどうぞ）
+          <input id="f-genre" type="text" placeholder="例：静かに本読める喫茶店、子連れで行ける飯屋">
+        </label>
+        <div id="known-genres" class="known-list" style="display:none">
+          <span class="known-label">これまで使ったジャンル（タップで入る）：</span>
+          <span id="known-genres-list"></span>
+        </div>
+
+        <label class="field">エリア
+          <input id="f-area" type="text" placeholder="例：江古田、金沢、鎌倉">
+        </label>
+
+        <label class="field">場所のメモ（住所・目印など）
+          <input id="f-address" type="text" placeholder="例：駅の南口を出て2本目の路地">
+        </label>
+
+        <div class="field">現在地
+          <div class="gps-row">
+            <button type="button" id="btn-gps" class="btn btn-ghost">📍 現在地をとる</button>
+            <button type="button" id="btn-gps-clear" class="btn btn-ghost btn-sm" style="display:none">消す</button>
+          </div>
+          <span id="gps-status" class="field-hint">現在地をとると地図にピンが立ちます（店名は自動では取れないので手入力です）</span>
+        </div>
+
+        <div class="field">よかった度
+          <div id="star-input" class="star-input" role="group" aria-label="よかった度">
+            <span data-star="1">★</span><span data-star="2">★</span><span data-star="3">★</span><span data-star="4">★</span><span data-star="5">★</span>
+          </div>
+          <span id="star-hint" class="field-hint">よかった度（任意・タップで設定）</span>
+        </div>
+
+        <div class="field">また行きたい？
+          <div id="revisit-input" class="chip-row">
+            <button type="button" class="chip" data-revisit="1">もういいかな</button>
+            <button type="button" class="chip" data-revisit="2">また行きたい</button>
+            <button type="button" class="chip" data-revisit="3">絶対また行く</button>
+          </div>
+        </div>
+
+        <label class="field">タグ
+          <input id="f-tags" type="text" placeholder="例：静か, 子連れOK, 電源あり（カンマ区切り）">
+        </label>
+        <div id="known-tags" class="known-list" style="display:none">
+          <span class="known-label">これまで使ったタグ（タップで追加）：</span>
+          <span id="known-tags-list"></span>
+        </div>
+
+        <label class="field">この場所のメモ
+          <textarea id="f-note" rows="3" placeholder="どんな場所だったか、次に行くときの自分へのメモ"></textarea>
+        </label>
+
+        <div id="first-visit-block" class="first-visit">
+          <div class="first-visit-title">行った日</div>
+          <label class="field">日付
+            <input id="f-visited-on" type="date">
+          </label>
+          <label class="field">その日のひとこと
+            <textarea id="f-visit-memo" rows="2" placeholder="例：夕方に行ったら空いてた。ナポリタンが良い。"></textarea>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="btn-delete" class="btn btn-danger" style="display:none">削除</button>
+          <div class="spacer"></div>
+          <button type="button" id="btn-cancel" class="btn btn-ghost">キャンセル</button>
+          <button type="submit" id="btn-save" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- また行った（訪問追記）モーダル -->
+  <div id="visit-modal" class="modal hidden">
+    <form id="visit-form" class="modal-card">
+      <h3 class="modal-title">また行った日を記録</h3>
+      <label class="field">日付
+        <input id="v-date" type="date">
+      </label>
+      <label class="field">その日のひとこと
+        <textarea id="v-memo" rows="3" placeholder="例：今日は混んでた。奥の席が good。"></textarea>
+      </label>
+      <div class="form-actions">
+        <div class="spacer"></div>
+        <button type="button" id="btn-visit-cancel" class="btn btn-ghost">キャンセル</button>
+        <button type="submit" class="btn btn-primary">記録する</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/config.js?v=1"></script>
+  <script src="js/util.js?v=1"></script>
+  <script src="js/db.js?v=1"></script>
+  <script src="js/auth.js?v=1"></script>
+  <script src="js/backup.js?v=1"></script>
+  <script src="js/map.js?v=1"></script>
+  <script src="js/app.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
+</body>
+</html>
