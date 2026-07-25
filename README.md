@@ -33,14 +33,14 @@ Googleマップの「保存」と違って、分類も評価も自分の基準�
 ## セットアップ
 
 1. Supabase の SQL Editor で `sql/01_schema.sql` を**全文コピペして実行**する
-   （Sou_Diary プロジェクトに `plog_` 接頭辞で間借り。他アプリのテーブルとは混ざらない）
+   （テーブルはすべて `plog_` 接頭辞。既存の他テーブルとは混ざらない）
 2. `js/config.js` に Supabase の URL と publishable key を入れる（既に入っている）
 3. ローカルで見るときは `python3 serve.py` → http://localhost:8010
 
 ## プライバシー
 
-- 行は `user_id = auth.uid()` の RLS で隔離。同じ Supabase プロジェクトに他の人のアカウントが
-  居ても、他人からは見えない。
+- 行は `user_id = auth.uid()` の RLS で隔離。同じプロジェクトに別のアカウントがあっても、
+  他人からは見えない。
 - `js/config.js` に入っているのは publishable key（ブラウザに必ず出る＝公開して安全な鍵）だけ。
   secret / service key は絶対に入れない。
 - 現在地は端末のGPSから緯度経度を取るだけで、外部の位置情報サービスには送らない。

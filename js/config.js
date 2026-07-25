@@ -1,4 +1,4 @@
-// 実際の接続設定（Sou_Diary と同じ Supabase プロジェクトに間借り）。
+// 実際の接続設定。
 // Publishable key（公開しても安全な鍵）+ URL のみ。secret key は絶対に入れない。
 
 window.PLOG_CONFIG = {

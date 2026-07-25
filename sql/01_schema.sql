@@ -1,16 +1,13 @@
 -- ============================================================
 -- 行った場所ノート スキーマ v1
 -- Supabase の SQL Editor に「全文コピペ」して実行してください。
--- （people-map / history-db / 動画ウォッチ箱と同じ Sou_Diary プロジェクトに
---   間借りしますが、この plog_ テーブルは他アプリのテーブルと混ざりません）
+-- テーブルはすべて plog_ 接頭辞。既存の他テーブルとは混ざりません。
 --
--- 【最重要・プライバシー】
---   このプロジェクトには他の人のアカウント（例：奥様）も居ます。
---   行った場所ノートは「自分のデータは自分(user_id = auth.uid())だけ」に隔離します。
---   ＝ 他のアカウントからは岡野さんの訪問記録は一切見えません。
+-- 【プライバシー】
+--   同じプロジェクトに複数のアカウントが存在しうる前提で、
+--   「自分のデータは自分(user_id = auth.uid())だけ」に隔離します。
 -- ============================================================
 
--- 場所（1つの店＝1行。何度行っても行は増えない）
 create table if not exists public.plog_places (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
@@ -45,7 +42,7 @@ create index if not exists idx_plog_visits_place on public.plog_visits (place_id
 
 -- ============================================================
 -- updated_at 自動更新トリガー
--- （Sou_Diary に同名関数が既にあっても create or replace なので安全）
+-- （同名関数が既にあっても create or replace なので安全）
 -- ============================================================
 create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$

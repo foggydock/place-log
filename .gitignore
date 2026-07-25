@@ -1,6 +1,6 @@
-# 注：js/config.js は publishable key（公開しても安全）+ URL のみ。
-# デプロイに必要なのでコミットする。秘密の secret key は絶対にここに入れないこと。
-# （config.js はあえて除外しない。video-box / Sou_Diary と同じ運用：非公開リポなのでコミットOK）
+# 注：js/config.js は publishable key（ブラウザに必ず出る＝公開して安全な鍵）+ URL のみ。
+# デプロイに必要なのでコミットする。データは DB 側の RLS で守る。
+# 秘密の secret / service key は絶対にここに入れないこと。
 
 # OS / ローカル開発用
 .DS_Store
