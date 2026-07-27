@@ -12,6 +12,7 @@ Googleマップの「保存」と違って、分類も評価も自分の基準�
 - **地図**（Leaflet + OpenStreetMap・無料・APIキー不要）にピン表示
   - 登録時に「📍 現在地をとる」で端末のGPSから緯度経度を記録する
   - **店名の自動判定はしない**（無料でできないため）。名前は手入力
+- 場所ごとに **画像を追加**（名刺・写真など。タップで拡大、削除も可能）
 - 検索（名前・ジャンル・エリア・タグ・メモ・訪問メモを横断）
 - 並び替え：最近行った順／ごぶさた順／よかった順／また行きたい順／よく行く順／追加順／名前順
 - バックアップ（💾ボタン）：JSON書き出し（復元用）／Markdown書き出し（読む用）／JSON取り込み
@@ -29,10 +30,11 @@ Googleマップの「保存」と違って、分類も評価も自分の基準�
 | `js/map.js` | 地図（Leaflet） |
 | `js/backup.js` | 書き出し／取り込み |
 | `sql/01_schema.sql` | テーブル定義・RLS・GRANT |
+| `sql/02_images.sql` | 画像添付用テーブル・Storageバケット・RLS |
 
 ## セットアップ
 
-1. Supabase の SQL Editor で `sql/01_schema.sql` を**全文コピペして実行**する
+1. Supabase の SQL Editor で `sql/01_schema.sql`・`sql/02_images.sql` を**全文コピペして実行**する
    （テーブルはすべて `plog_` 接頭辞。既存の他テーブルとは混ざらない）
 2. `js/config.js` に Supabase の URL と publishable key を入れる（既に入っている）
 3. ローカルで見るときは `python3 serve.py` → http://localhost:8010
@@ -44,6 +46,7 @@ Googleマップの「保存」と違って、分類も評価も自分の基準�
 - `js/config.js` に入っているのは publishable key（ブラウザに必ず出る＝公開して安全な鍵）だけ。
   secret / service key は絶対に入れない。
 - 現在地は端末のGPSから緯度経度を取るだけで、外部の位置情報サービスには送らない。
+- 画像は非公開の Storage バケットに保存され、閲覧は自分専用の signed URL（1時間で失効）でのみ行う。
 
 ## 注意
 

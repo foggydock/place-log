@@ -89,11 +89,56 @@ const DB = (() => {
     return await client.from(table).upsert(payload, { onConflict: "id" }).select();
   }
 
+  // ---------- 画像（名刺・写真など） ----------
+
+  const IMAGE_BUCKET = "plog-images";
+
+  function listImages() { return _listAll("plog_images", "created_at", false); }
+
+  async function uploadImage(placeId, file) {
+    if (!client) return { error: { message: "未接続" } };
+    const uid = window.Auth?.getUserId?.();
+    if (!uid) return { error: { message: "ログインしていません" } };
+
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${uid}/${placeId}/${crypto.randomUUID()}.${ext}`;
+
+    const { error: upErr } = await client.storage.from(IMAGE_BUCKET).upload(path, file, {
+      contentType: file.type || "image/jpeg",
+    });
+    if (upErr) return { error: upErr };
+
+    const { data, error } = await client.from("plog_images")
+      .insert({ place_id: placeId, storage_path: path })
+      .select().single();
+    if (error) {
+      await client.storage.from(IMAGE_BUCKET).remove([path]);
+      return { error };
+    }
+    return { data };
+  }
+
+  async function getImageUrl(path) {
+    if (!client) return null;
+    const { data, error } = await client.storage.from(IMAGE_BUCKET).createSignedUrl(path, 60 * 60);
+    if (error) return null;
+    return data.signedUrl;
+  }
+
+  async function deleteImage(id, storagePath) {
+    if (!client) return { error: { message: "未接続" } };
+    const { error } = await client.from("plog_images").delete().eq("id", id);
+    if (error) return { error };
+    await client.storage.from(IMAGE_BUCKET).remove([storagePath]);
+    return { error: null };
+  }
+
   return {
     init, getClient,
     listPlaces, insertPlace, updatePlace, deletePlace,
     listVisits, insertVisit, updateVisit, deleteVisit,
     upsertRows,
+    listImages, uploadImage, getImageUrl, deleteImage,
   };
 })();
 window.DB = DB;

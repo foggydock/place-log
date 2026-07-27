@@ -2,8 +2,10 @@
 const App = (() => {
   let places = [];          // plog_places の全行
   let visits = [];          // plog_visits の全行
+  let images = [];          // plog_images の全行
   let editingId = null;     // 編集中の場所ID（null なら新規）
   let detailId = null;      // 詳細表示中の場所ID
+  let modalImageId = null;  // 画像モーダルで開いている画像ID
   let filterGenre = "";     // ジャンル絞り込み（空＝すべて）
   let filterTag = "";       // タグ絞り込み（空＝すべて）
   let searchText = "";
@@ -45,8 +47,14 @@ const App = (() => {
   // ---------- 読み込み ----------
 
   async function load() {
-    [places, visits] = await Promise.all([DB.listPlaces(), DB.listVisits()]);
+    [places, visits, images] = await Promise.all([DB.listPlaces(), DB.listVisits(), DB.listImages()]);
     render();
+  }
+
+  function imagesOf(placeId) {
+    return images
+      .filter((i) => i.place_id === placeId)
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   }
 
   // ---------- 一覧の描画 ----------
@@ -182,6 +190,8 @@ const App = (() => {
     }
     document.getElementById("detail-info").innerHTML = info.join("");
 
+    renderImages(id);
+
     document.getElementById("detail-visit-count").textContent = `訪問 ${vs.length}回`;
     document.getElementById("visit-list").innerHTML = vs.length
       ? vs.map((v) => `
@@ -193,6 +203,59 @@ const App = (() => {
       : `<li class="empty-small">まだ訪問日の記録がありません。</li>`;
 
     Util.showView("view-detail");
+  }
+
+  // ---------- 画像（名刺・写真など） ----------
+
+  async function renderImages(placeId) {
+    const imgs = imagesOf(placeId);
+    const grid = document.getElementById("image-grid");
+    if (!imgs.length) { grid.innerHTML = ""; return; }
+    grid.innerHTML = imgs.map((i) => `<button type="button" class="image-thumb" data-image-id="${i.id}"><img alt="" data-loading></button>`).join("");
+    imgs.forEach(async (i) => {
+      const url = await DB.getImageUrl(i.storage_path);
+      const btn = grid.querySelector(`[data-image-id="${i.id}"] img`);
+      if (btn && url) btn.src = url;
+    });
+  }
+
+  async function uploadImages(fileList) {
+    if (!detailId || !fileList || !fileList.length) return;
+    Util.showBanner("画像をアップロード中…", "success");
+    for (const file of fileList) {
+      const { error } = await DB.uploadImage(detailId, file);
+      if (error) { Util.showBanner(`アップロードできません: ${error.message}`, "error"); }
+    }
+    images = await DB.listImages();
+    renderImages(detailId);
+  }
+
+  async function openImageModal(imageId) {
+    const img = images.find((i) => i.id === imageId);
+    if (!img) return;
+    modalImageId = imageId;
+    const url = await DB.getImageUrl(img.storage_path);
+    document.getElementById("image-modal-img").src = url || "";
+    document.getElementById("image-modal").classList.remove("hidden");
+  }
+
+  function closeImageModal() {
+    modalImageId = null;
+    document.getElementById("image-modal").classList.add("hidden");
+    document.getElementById("image-modal-img").src = "";
+  }
+
+  async function deleteCurrentImage() {
+    if (!modalImageId) return;
+    const img = images.find((i) => i.id === modalImageId);
+    if (!img) return;
+    if (!confirm("この画像を削除します。よろしいですか？")) return;
+    const { error } = await DB.deleteImage(img.id, img.storage_path);
+    if (error) { Util.showBanner(`削除できません: ${error.message}`, "error"); return; }
+    closeImageModal();
+    images = await DB.listImages();
+    renderImages(detailId);
+    Util.showBanner("画像を削除しました", "success");
   }
 
   // ---------- フォーム ----------
@@ -409,6 +472,19 @@ const App = (() => {
     document.getElementById("btn-detail-back").addEventListener("click", () => Util.showView("view-list"));
     document.getElementById("btn-detail-edit").addEventListener("click", () => openEdit(detailId));
     document.getElementById("btn-add-visit").addEventListener("click", openAddVisit);
+    document.getElementById("f-image-input").addEventListener("change", (e) => {
+      uploadImages(e.target.files);
+      e.target.value = "";
+    });
+    document.getElementById("image-grid").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-image-id]"); if (!b) return;
+      openImageModal(b.dataset.imageId);
+    });
+    document.getElementById("btn-image-close").addEventListener("click", closeImageModal);
+    document.getElementById("btn-image-delete").addEventListener("click", deleteCurrentImage);
+    document.getElementById("image-modal").addEventListener("click", (e) => {
+      if (e.target.id === "image-modal") closeImageModal();
+    });
     document.getElementById("visit-list").addEventListener("click", (e) => {
       const b = e.target.closest(".btn-visit-del"); if (!b) return;
       removeVisit(b.dataset.visitId);
