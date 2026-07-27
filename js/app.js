@@ -207,6 +207,30 @@ const App = (() => {
 
   // ---------- 画像（名刺・写真など） ----------
 
+  const IMAGE_MAX_SIZE = 1600; // 長辺の最大px
+  const IMAGE_QUALITY = 0.8;
+
+  async function compressImage(file) {
+    if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, IMAGE_MAX_SIZE / Math.max(bitmap.width, bitmap.height));
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+      bitmap.close?.();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", IMAGE_QUALITY));
+      if (!blob || blob.size >= file.size) return file;
+      const name = file.name.replace(/\.\w+$/, "") + ".jpg";
+      return new File([blob], name, { type: "image/jpeg" });
+    } catch {
+      return file; // 圧縮に失敗したら元ファイルのままアップロード
+    }
+  }
+
   async function renderImages(placeId) {
     const imgs = imagesOf(placeId);
     const grid = document.getElementById("image-grid");
@@ -223,7 +247,8 @@ const App = (() => {
     if (!detailId || !fileList || !fileList.length) return;
     Util.showBanner("画像をアップロード中…", "success");
     for (const file of fileList) {
-      const { error } = await DB.uploadImage(detailId, file);
+      const compressed = await compressImage(file);
+      const { error } = await DB.uploadImage(detailId, compressed);
       if (error) { Util.showBanner(`アップロードできません: ${error.message}`, "error"); }
     }
     images = await DB.listImages();
