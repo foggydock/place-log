@@ -8,8 +8,8 @@ const MapView = (() => {
   function ensureMap() {
     if (map) return map;
     if (!window.L) return null;
-    // 初期位置は東京。ピンがあれば下で fitBounds される。
-    map = L.map("map", { zoomControl: true }).setView([35.6812, 139.7671], 12);
+    // 初期位置は東京（現在地が取れるまでの仮表示）。取得できたら現在地中心・拡大に切り替える。
+    map = L.map("map", { zoomControl: true }).setView([35.6812, 139.7671], 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -37,7 +37,24 @@ const MapView = (() => {
     setTimeout(() => {
       m.invalidateSize();
       draw(places);
+      centerOnCurrentLocationOnce(m);
     }, 0);
+  }
+
+  // 初回表示時だけ、現在地を中心にやや拡大した状態にする。
+  // 取得できない/拒否された場合は fitBounds の結果のままにしておく。
+  let locatedOnce = false;
+  function centerOnCurrentLocationOnce(m) {
+    if (locatedOnce) return;
+    locatedOnce = true;
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        m.setView([pos.coords.latitude, pos.coords.longitude], 15);
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+    );
   }
 
   function draw(places) {
