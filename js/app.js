@@ -10,6 +10,7 @@ const App = (() => {
   let filterTag = "";       // タグ絞り込み（空＝すべて）
   let searchText = "";
   let sortKey = "recent";
+  let currentPos = null; // { lat, lng }（「現在地から近い順」ソート用）
   let formStars = 0;
   let formRevisit = 0;
   let formLatLng = { lat: null, lng: null };
@@ -81,9 +82,30 @@ const App = (() => {
       count:   (a, b) => visitsOf(b.id).length - visitsOf(a.id).length,
       created: (a, b) => String(b.created_at).localeCompare(String(a.created_at)),
       name:    (a, b) => String(a.name).localeCompare(String(b.name), "ja"),
+      distance: distanceCmp,
     }[sortKey] || ((a, b) => 0);
 
     return list.sort(cmp);
+  }
+
+  // 現在地からの距離順（緯度経度がない場所・現在地未取得時は末尾）
+  function distanceCmp(a, b) {
+    const da = currentPos ? Util.distanceKm(currentPos.lat, currentPos.lng, a.lat, a.lng) : null;
+    const db = currentPos ? Util.distanceKm(currentPos.lat, currentPos.lng, b.lat, b.lng) : null;
+    if (da == null && db == null) return 0;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return da - db;
+  }
+
+  async function ensureCurrentPos() {
+    if (currentPos) return;
+    try {
+      currentPos = await Util.getCurrentPosition();
+      render();
+    } catch (e) {
+      Util.showBanner(e.message, "error");
+    }
   }
 
   function render() {
@@ -471,6 +493,7 @@ const App = (() => {
 
     document.getElementById("sort-select").addEventListener("change", (e) => {
       sortKey = e.target.value; render();
+      if (sortKey === "distance") ensureCurrentPos();
     });
 
     document.getElementById("genre-filter").addEventListener("click", (e) => {
