@@ -118,50 +118,47 @@ const App = (() => {
 
   function renderFilters() {
     const genres = allGenres();
-    const gBox = document.getElementById("genre-filter");
-    if (!genres.length) {
-      gBox.style.display = "none";
-    } else {
-      gBox.style.display = "flex";
-      gBox.innerHTML =
-        `<button type="button" class="chip ${filterGenre ? "" : "chip-on"}" data-genre="">すべて</button>` +
-        genres.map((g) =>
-          `<button type="button" class="chip ${filterGenre === g ? "chip-on" : ""}" data-genre="${Util.esc(g)}">${Util.esc(g)}</button>`
-        ).join("");
-    }
-
     const tags = allTags();
-    const rowBox = document.getElementById("tag-filter-row");
-    const btn = document.getElementById("btn-tag-picker");
-    if (!tags.length) {
+    const rowBox = document.getElementById("filter-row");
+    if (!genres.length && !tags.length) {
       rowBox.style.display = "none";
-    } else {
-      rowBox.style.display = "flex";
-      btn.textContent = filterTag ? `🏷️ #${filterTag} ✕` : "🏷️ タグで絞り込む";
-      btn.classList.toggle("chip-on", !!filterTag);
+      return;
     }
+    rowBox.style.display = "flex";
+
+    const gBtn = document.getElementById("btn-genre-picker");
+    gBtn.style.display = genres.length ? "" : "none";
+    gBtn.textContent = filterGenre ? `${filterGenre} ✕` : "ジャンルで絞り込む";
+    gBtn.classList.toggle("chip-on", !!filterGenre);
+
+    const tBtn = document.getElementById("btn-tag-picker");
+    tBtn.style.display = tags.length ? "" : "none";
+    tBtn.textContent = filterTag ? `🏷️ #${filterTag} ✕` : "🏷️ タグで絞り込む";
+    tBtn.classList.toggle("chip-on", !!filterTag);
   }
 
-  // ---------- タグ絞り込みモーダル ----------
+  // ---------- ジャンル・タグ絞り込みモーダル（共通ロジック） ----------
 
-  function openTagModal() {
-    document.getElementById("tag-search").value = "";
-    renderTagModal("");
-    document.getElementById("tag-modal").classList.remove("hidden");
-    document.getElementById("tag-search").focus();
+  function openPickerModal(kind) {
+    document.getElementById(`${kind}-search`).value = "";
+    renderPickerModal(kind, "");
+    document.getElementById(`${kind}-modal`).classList.remove("hidden");
+    document.getElementById(`${kind}-search`).focus();
   }
 
-  function closeTagModal() {
-    document.getElementById("tag-modal").classList.add("hidden");
+  function closePickerModal(kind) {
+    document.getElementById(`${kind}-modal`).classList.add("hidden");
   }
 
-  function renderTagModal(query) {
+  function renderPickerModal(kind, query) {
     const q = query.trim().toLowerCase();
-    const tags = allTags().filter((t) => !q || t.toLowerCase().includes(q));
-    const list = document.getElementById("tag-modal-list");
-    list.innerHTML = tags.length
-      ? tags.map((t) =>
-          `<button type="button" class="chip chip-tag ${filterTag === t ? "chip-on" : ""}" data-tag="${Util.esc(t)}">#${Util.esc(t)}</button>`
+    const values = (kind === "genre" ? allGenres() : allTags()).filter((v) => !q || v.toLowerCase().includes(q));
+    const current = kind === "genre" ? filterGenre : filterTag;
+    const list = document.getElementById(`${kind}-modal-list`);
+    const prefix = kind === "tag" ? "#" : "";
+    list.innerHTML = values.length
+      ? values.map((v) =>
+          `<button type="button" class="chip chip-tag ${current === v ? "chip-on" : ""}" data-value="${Util.esc(v)}">${prefix}${Util.esc(v)}</button>`
         ).join("")
       : `<p class="empty-small">見つかりませんでした</p>`;
   }
@@ -523,24 +520,34 @@ const App = (() => {
       if (sortKey === "distance") ensureCurrentPos();
     });
 
-    document.getElementById("genre-filter").addEventListener("click", (e) => {
-      const b = e.target.closest("[data-genre]"); if (!b) return;
-      filterGenre = b.dataset.genre; render();
+    document.getElementById("btn-genre-picker").addEventListener("click", () => openPickerModal("genre"));
+    document.getElementById("genre-search").addEventListener("input", (e) => renderPickerModal("genre", e.target.value));
+    document.getElementById("genre-modal-list").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-value]"); if (!b) return;
+      filterGenre = (filterGenre === b.dataset.value) ? "" : b.dataset.value;
+      render(); closePickerModal("genre");
+    });
+    document.getElementById("btn-genre-clear").addEventListener("click", () => {
+      filterGenre = ""; render(); closePickerModal("genre");
+    });
+    document.getElementById("btn-genre-close").addEventListener("click", () => closePickerModal("genre"));
+    document.getElementById("genre-modal").addEventListener("click", (e) => {
+      if (e.target.id === "genre-modal") closePickerModal("genre");
     });
 
-    document.getElementById("btn-tag-picker").addEventListener("click", openTagModal);
-    document.getElementById("tag-search").addEventListener("input", (e) => renderTagModal(e.target.value));
+    document.getElementById("btn-tag-picker").addEventListener("click", () => openPickerModal("tag"));
+    document.getElementById("tag-search").addEventListener("input", (e) => renderPickerModal("tag", e.target.value));
     document.getElementById("tag-modal-list").addEventListener("click", (e) => {
-      const b = e.target.closest("[data-tag]"); if (!b) return;
-      filterTag = (filterTag === b.dataset.tag) ? "" : b.dataset.tag;
-      render(); closeTagModal();
+      const b = e.target.closest("[data-value]"); if (!b) return;
+      filterTag = (filterTag === b.dataset.value) ? "" : b.dataset.value;
+      render(); closePickerModal("tag");
     });
     document.getElementById("btn-tag-clear").addEventListener("click", () => {
-      filterTag = ""; render(); closeTagModal();
+      filterTag = ""; render(); closePickerModal("tag");
     });
-    document.getElementById("btn-tag-close").addEventListener("click", closeTagModal);
+    document.getElementById("btn-tag-close").addEventListener("click", () => closePickerModal("tag"));
     document.getElementById("tag-modal").addEventListener("click", (e) => {
-      if (e.target.id === "tag-modal") closeTagModal();
+      if (e.target.id === "tag-modal") closePickerModal("tag");
     });
 
     document.getElementById("place-grid").addEventListener("click", (e) => {
