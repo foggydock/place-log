@@ -204,6 +204,7 @@ const App = (() => {
 
     const info = [];
     if (p.address) info.push(`<div class="detail-row"><span class="detail-label">場所</span>${Util.esc(p.address)}</div>`);
+    if (p.url) info.push(`<div class="detail-row"><span class="detail-label">URL</span><a class="link" href="${Util.esc(p.url)}" target="_blank" rel="noopener">${Util.esc(p.url)}</a></div>`);
     if ((p.tags || []).length) info.push(`<div class="detail-row"><span class="detail-label">タグ</span>${p.tags.map((t) => `<span class="tag">#${Util.esc(t)}</span>`).join("")}</div>`);
     if (p.note) info.push(`<div class="detail-row"><span class="detail-label">メモ</span>${Util.nl2br(p.note)}</div>`);
     if (p.lat != null && p.lng != null) {
@@ -359,6 +360,7 @@ const App = (() => {
     document.getElementById("f-genre").value = p.genre || "";
     document.getElementById("f-area").value = p.area || "";
     document.getElementById("f-address").value = p.address || "";
+    document.getElementById("f-url").value = p.url || "";
     document.getElementById("f-tags").value = (p.tags || []).join(", ");
     document.getElementById("f-note").value = p.note || "";
     document.getElementById("first-visit-block").style.display = "none";
@@ -394,6 +396,7 @@ const App = (() => {
       genre:   document.getElementById("f-genre").value.trim(),
       area:    document.getElementById("f-area").value.trim(),
       address: document.getElementById("f-address").value.trim(),
+      url:     document.getElementById("f-url").value.trim(),
       tags:    Util.parseTags(document.getElementById("f-tags").value),
       note:    document.getElementById("f-note").value.trim(),
       stars:   formStars,
