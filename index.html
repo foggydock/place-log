@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 
@@ -76,7 +76,9 @@
       </div>
 
       <div id="genre-filter" class="chip-row" style="display:none"></div>
-      <div id="tag-filter" class="chip-row" style="display:none"></div>
+      <div id="tag-filter-row" class="tag-filter-row" style="display:none">
+        <button type="button" id="btn-tag-picker" class="btn btn-ghost btn-sm"></button>
+      </div>
 
       <div id="place-grid" class="place-grid"></div>
       <div id="list-empty" class="empty" style="display:none"></div>
@@ -213,6 +215,20 @@
     </form>
   </div>
 
+  <!-- タグで絞り込む -->
+  <div id="tag-modal" class="modal hidden">
+    <div class="modal-card tag-modal-card">
+      <h3 class="modal-title">タグで絞り込む</h3>
+      <input id="tag-search" class="search-input" type="search" placeholder="🔍 タグを検索">
+      <div id="tag-modal-list" class="chip-row tag-modal-list"></div>
+      <div class="form-actions">
+        <button type="button" id="btn-tag-clear" class="btn btn-ghost btn-sm">絞り込みを消す</button>
+        <div class="spacer"></div>
+        <button type="button" id="btn-tag-close" class="btn btn-primary btn-sm">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 画像の拡大表示 -->
   <div id="image-modal" class="modal hidden">
     <div class="modal-card image-modal-card">
@@ -233,7 +249,7 @@
   <script src="js/auth.js?v=2"></script>
   <script src="js/backup.js?v=2"></script>
   <script src="js/map.js?v=2"></script>
-  <script src="js/app.js?v=3"></script>
-  <script src="js/main.js?v=3"></script>
+  <script src="js/app.js?v=4"></script>
+  <script src="js/main.js?v=4"></script>
 </body>
 </html>

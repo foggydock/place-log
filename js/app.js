@@ -131,15 +131,39 @@ const App = (() => {
     }
 
     const tags = allTags();
-    const tBox = document.getElementById("tag-filter");
+    const rowBox = document.getElementById("tag-filter-row");
+    const btn = document.getElementById("btn-tag-picker");
     if (!tags.length) {
-      tBox.style.display = "none";
+      rowBox.style.display = "none";
     } else {
-      tBox.style.display = "flex";
-      tBox.innerHTML = tags.map((t) =>
-        `<button type="button" class="chip chip-tag ${filterTag === t ? "chip-on" : ""}" data-tag="${Util.esc(t)}">#${Util.esc(t)}</button>`
-      ).join("");
+      rowBox.style.display = "flex";
+      btn.textContent = filterTag ? `🏷️ #${filterTag} ✕` : "🏷️ タグで絞り込む";
+      btn.classList.toggle("chip-on", !!filterTag);
     }
+  }
+
+  // ---------- タグ絞り込みモーダル ----------
+
+  function openTagModal() {
+    document.getElementById("tag-search").value = "";
+    renderTagModal("");
+    document.getElementById("tag-modal").classList.remove("hidden");
+    document.getElementById("tag-search").focus();
+  }
+
+  function closeTagModal() {
+    document.getElementById("tag-modal").classList.add("hidden");
+  }
+
+  function renderTagModal(query) {
+    const q = query.trim().toLowerCase();
+    const tags = allTags().filter((t) => !q || t.toLowerCase().includes(q));
+    const list = document.getElementById("tag-modal-list");
+    list.innerHTML = tags.length
+      ? tags.map((t) =>
+          `<button type="button" class="chip chip-tag ${filterTag === t ? "chip-on" : ""}" data-tag="${Util.esc(t)}">#${Util.esc(t)}</button>`
+        ).join("")
+      : `<p class="empty-small">見つかりませんでした</p>`;
   }
 
   function starsHtml(n) {
@@ -504,9 +528,19 @@ const App = (() => {
       filterGenre = b.dataset.genre; render();
     });
 
-    document.getElementById("tag-filter").addEventListener("click", (e) => {
+    document.getElementById("btn-tag-picker").addEventListener("click", openTagModal);
+    document.getElementById("tag-search").addEventListener("input", (e) => renderTagModal(e.target.value));
+    document.getElementById("tag-modal-list").addEventListener("click", (e) => {
       const b = e.target.closest("[data-tag]"); if (!b) return;
-      filterTag = (filterTag === b.dataset.tag) ? "" : b.dataset.tag; render();
+      filterTag = (filterTag === b.dataset.tag) ? "" : b.dataset.tag;
+      render(); closeTagModal();
+    });
+    document.getElementById("btn-tag-clear").addEventListener("click", () => {
+      filterTag = ""; render(); closeTagModal();
+    });
+    document.getElementById("btn-tag-close").addEventListener("click", closeTagModal);
+    document.getElementById("tag-modal").addEventListener("click", (e) => {
+      if (e.target.id === "tag-modal") closeTagModal();
     });
 
     document.getElementById("place-grid").addEventListener("click", (e) => {

@@ -318,6 +318,11 @@ textarea { resize: vertical; }
   overflow-y: auto;
 }
 .modal-title { margin: 0; font-size: 17px; }
+.tag-modal-card { max-width: 480px; }
+.tag-modal-list { max-height: 45vh; overflow-y: auto; }
+
+/* ---- タグ絞り込みボタン ---- */
+.tag-filter-row { margin-bottom: 10px; }
 
 /* ---- バナー ---- */
 .banner {
