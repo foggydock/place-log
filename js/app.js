@@ -39,6 +39,18 @@ const App = (() => {
     return [...new Set(places.map((p) => (p.genre || "").trim()).filter(Boolean))].sort();
   }
 
+  // ジャンルは「うどん, カフェ, カレー」のようにカンマ区切りで複数入っていることがあるため、
+  // 絞り込みは1つずつに分解してマッチさせる（表示・入力欄はそのままのカンマ区切り表記を保つ）
+  function genreTokensOf(p) {
+    return (p.genre || "").split(/[,、]/).map((g) => g.trim()).filter(Boolean);
+  }
+
+  function allGenreTokens() {
+    const s = new Set();
+    places.forEach((p) => genreTokensOf(p).forEach((g) => s.add(g)));
+    return [...s].sort();
+  }
+
   function allTags() {
     const s = new Set();
     places.forEach((p) => (p.tags || []).forEach((t) => s.add(t)));
@@ -63,7 +75,7 @@ const App = (() => {
   function visiblePlaces() {
     const q = searchText.trim().toLowerCase();
     let list = places.filter((p) => {
-      if (filterGenre && (p.genre || "") !== filterGenre) return false;
+      if (filterGenre && !genreTokensOf(p).includes(filterGenre)) return false;
       if (filterTag && !(p.tags || []).includes(filterTag)) return false;
       if (!q) return true;
       const hay = [
@@ -117,7 +129,7 @@ const App = (() => {
   }
 
   function renderFilters() {
-    const genres = allGenres();
+    const genres = allGenreTokens();
     const tags = allTags();
     const rowBox = document.getElementById("filter-row");
     if (!genres.length && !tags.length) {
@@ -152,7 +164,7 @@ const App = (() => {
 
   function renderPickerModal(kind, query) {
     const q = query.trim().toLowerCase();
-    const values = (kind === "genre" ? allGenres() : allTags()).filter((v) => !q || v.toLowerCase().includes(q));
+    const values = (kind === "genre" ? allGenreTokens() : allTags()).filter((v) => !q || v.toLowerCase().includes(q));
     const current = kind === "genre" ? filterGenre : filterTag;
     const list = document.getElementById(`${kind}-modal-list`);
     const prefix = kind === "tag" ? "#" : "";
