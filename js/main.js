@@ -47,15 +47,32 @@ function wireLogin() {
     const btn = document.getElementById("btn-login");
     // 日本語入力がオンのまま打つと「＋」「＠」が全角になり、別のアドレス扱いで弾かれる。
     // NFKC で半角に寄せてから送る（パスワードは打った通りが正なので触らない）。
-    const email = document.getElementById("login-email").value.trim().normalize("NFKC");
+    const raw = document.getElementById("login-email").value.trim();
+    const email = raw.normalize("NFKC");
     const pw = document.getElementById("login-password").value;
     btn.disabled = true; btn.textContent = "ログイン中…";
+
+    const fail = (msg) => {
+      Util.showBanner(msg, "error");
+      btn.disabled = false; btn.textContent = "ログイン";
+    };
+
     const { error } = await Auth.signInWithPassword(email, pw);
     if (error) {
-      Util.showBanner(`ログインできません: ${error.message}`, "error");
-      btn.disabled = false; btn.textContent = "ログイン";
+      // どのアドレスで試したかを必ず出す。別アプリ用のアドレスが
+      // ブラウザの自動入力で紛れ込んでいても気づけるようにする。
+      fail(`ログインできません（${email} で試行）: ${error.message}`);
       return;
     }
-    location.reload();
+
+    // セッションが保存できたか確かめてから画面を切り替える。
+    // 以前は無条件に reload していたため、保存に失敗すると
+    // エラーも出ないままログイン画面に戻り、原因が分からなかった。
+    const session = await Auth.refreshSession();
+    if (!session) {
+      fail("ログインは通りましたが、セッションを保存できませんでした。ブラウザのCookie／サイトデータのブロック設定を確認してください。");
+      return;
+    }
+    await startApp();
   });
 }
