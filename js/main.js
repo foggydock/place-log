@@ -45,7 +45,9 @@ function wireLogin() {
   document.getElementById("login-form").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const btn = document.getElementById("btn-login");
-    const email = document.getElementById("login-email").value.trim();
+    // 日本語入力がオンのまま打つと「＋」「＠」が全角になり、別のアドレス扱いで弾かれる。
+    // NFKC で半角に寄せてから送る（パスワードは打った通りが正なので触らない）。
+    const email = document.getElementById("login-email").value.trim().normalize("NFKC");
     const pw = document.getElementById("login-password").value;
     btn.disabled = true; btn.textContent = "ログイン中…";
     const { error } = await Auth.signInWithPassword(email, pw);
