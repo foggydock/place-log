@@ -13,7 +13,16 @@ const DB = (() => {
       Util.showBanner("Supabase JS が読み込めていません（ネット未接続？）", "error");
       return null;
     }
-    client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+    // storageKey を明示するのが重要。
+    // 同じ foggydock.github.io に複数の自作アプリが同居していて、しかも
+    // 同じ Supabase プロジェクトを間借りしているため、既定のキー
+    // （sb-<プロジェクトID>-auth-token）のままだと全アプリがひとつの
+    // セッション枠を共有してしまう。アプリごとに別アカウントで使う運用では
+    // 互いのログイン状態を上書きし合い、ログインは成功しているのに
+    // ログイン画面へ戻される、という分かりにくい事故になる。
+    client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+      auth: { storageKey: "plog-auth" },
+    });
     return client;
   }
 
