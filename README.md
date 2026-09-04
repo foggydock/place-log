@@ -31,11 +31,14 @@ Googleマップの「保存」と違って、分類も評価も自分の基準�
 | `js/backup.js` | 書き出し／取り込み |
 | `sql/01_schema.sql` | テーブル定義・RLS・GRANT |
 | `sql/02_images.sql` | 画像添付用テーブル・Storageバケット・RLS |
+| `sql/03_url.sql` | 場所にURL列を追加（既存DB用の追加マイグレーション） |
+| `sql/04_genre_array.sql` | ジャンル列を配列型に変更（既存DB用の追加マイグレーション） |
 
 ## セットアップ
 
 1. Supabase の SQL Editor で `sql/01_schema.sql`・`sql/02_images.sql` を**全文コピペして実行**する
    （テーブルはすべて `plog_` 接頭辞。既存の他テーブルとは混ざらない）
+   - 既に運用中のDBがある場合は、`sql/03_url.sql`・`sql/04_genre_array.sql` も追加で実行する
 2. `js/config.js` に Supabase の URL と publishable key を入れる（既に入っている）
 3. ローカルで見るときは `python3 serve.py` → http://localhost:8010
 

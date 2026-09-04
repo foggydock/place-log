@@ -35,15 +35,9 @@ const App = (() => {
   function getVisits() { return visits; }
   function findPlace(id) { return places.find((p) => p.id === id) || null; }
 
-  // ジャンルは「うどん, カフェ, カレー」のようにカンマ区切りで複数入っていることがあるため、
-  // 絞り込みは1つずつに分解してマッチさせる（表示・入力欄はそのままのカンマ区切り表記を保つ）
-  function genreTokensOf(p) {
-    return (p.genre || "").split(/[,、]/).map((g) => g.trim()).filter(Boolean);
-  }
-
   function allGenreTokens() {
     const s = new Set();
-    places.forEach((p) => genreTokensOf(p).forEach((g) => s.add(g)));
+    places.forEach((p) => (p.genre || []).forEach((g) => s.add(g)));
     return [...s].sort();
   }
 
@@ -71,11 +65,11 @@ const App = (() => {
   function visiblePlaces() {
     const q = searchText.trim().toLowerCase();
     let list = places.filter((p) => {
-      if (filterGenre && !genreTokensOf(p).includes(filterGenre)) return false;
+      if (filterGenre && !(p.genre || []).includes(filterGenre)) return false;
       if (filterTag && !(p.tags || []).includes(filterTag)) return false;
       if (!q) return true;
       const hay = [
-        p.name, p.genre, p.area, p.address, p.note,
+        p.name, (p.genre || []).join(" "), p.area, p.address, p.note,
         (p.tags || []).join(" "),
         visitsOf(p.id).map((v) => v.memo).join(" "),
       ].join(" ").toLowerCase();
@@ -181,7 +175,7 @@ const App = (() => {
     const vs = visitsOf(p.id);
     const last = vs.length ? vs[0].visited_on : null;
     const bits = [];
-    if (p.genre) bits.push(`<span class="badge badge-genre">${Util.esc(p.genre)}</span>`);
+    (p.genre || []).forEach((g) => bits.push(`<span class="badge badge-genre">${Util.esc(g)}</span>`));
     if (p.area)  bits.push(`<span class="badge">${Util.esc(p.area)}</span>`);
     if (p.revisit === 3) bits.push(`<span class="badge badge-hot">絶対また行く</span>`);
     return `
@@ -226,7 +220,7 @@ const App = (() => {
 
     document.getElementById("detail-name").textContent = p.name;
     const bits = [];
-    if (p.genre) bits.push(`<span class="badge badge-genre">${Util.esc(p.genre)}</span>`);
+    (p.genre || []).forEach((g) => bits.push(`<span class="badge badge-genre">${Util.esc(g)}</span>`));
     if (p.area)  bits.push(`<span class="badge">${Util.esc(p.area)}</span>`);
     if (p.revisit) bits.push(`<span class="badge">${REVISIT_LABELS[p.revisit]}</span>`);
     document.getElementById("detail-badges").innerHTML = bits.join("") + starsHtml(p.stars);
@@ -386,7 +380,7 @@ const App = (() => {
     editingId = id;
     document.getElementById("form-title").textContent = "場所をなおす";
     document.getElementById("f-name").value = p.name || "";
-    document.getElementById("f-genre").value = p.genre || "";
+    document.getElementById("f-genre").value = (p.genre || []).join(", ");
     document.getElementById("f-area").value = p.area || "";
     document.getElementById("f-address").value = p.address || "";
     document.getElementById("f-url").value = p.url || "";
@@ -422,7 +416,7 @@ const App = (() => {
 
     const row = {
       name,
-      genre:   document.getElementById("f-genre").value.trim(),
+      genre:   Util.parseTags(document.getElementById("f-genre").value),
       area:    document.getElementById("f-area").value.trim(),
       address: document.getElementById("f-address").value.trim(),
       url:     document.getElementById("f-url").value.trim(),

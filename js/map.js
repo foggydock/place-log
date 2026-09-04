@@ -68,7 +68,7 @@ const MapView = (() => {
       const last = vs.length ? vs[0].visited_on : null;
       const html =
         `<b>${Util.esc(p.name)}</b><br>` +
-        (p.genre ? `${Util.esc(p.genre)}<br>` : "") +
+        ((p.genre || []).length ? `${Util.esc(p.genre.join(", "))}<br>` : "") +
         `${vs.length}回` + (last ? `・最後は ${Util.relDay(last)}` : "") +
         `<br><a href="#" data-open-place="${p.id}">くわしく見る</a>`;
       const mk = L.marker([p.lat, p.lng]).addTo(layer).bindPopup(html);

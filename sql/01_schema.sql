@@ -12,7 +12,7 @@ create table if not exists public.plog_places (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
   name        text not null,                       -- 場所の名前（必須・手入力）
-  genre       text default '',                     -- ジャンル（自分の言葉で自由に）
+  genre       text[] default '{}',                  -- ジャンル（自分の言葉で自由に、複数可）
   area        text default '',                     -- エリア（例：江古田、金沢）
   address     text default '',                     -- 住所やメモ書きの場所情報
   lat         double precision,                    -- 緯度（GPSで取得 or 空）
