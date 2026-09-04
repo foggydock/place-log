@@ -1,6 +1,22 @@
 // エントリーポイント：接続 → 認証チェック → ビュー切替
 let plogInitDone = false;
 
+// 全体の安全網：Supabaseが{error}を返すケースは各所で拾っているが、
+// それとは別に「配列だと思ったら文字列だった」等の素のJS例外が
+// クリック処理や描画の途中で起きると、拾う場所がどこにもなく、
+// ボタンを押しても何も起きない・無言で固まる、という事故になる
+// （ジャンルをtext[]化した際、実際にこれでログイン後の描画が
+// 落ち、原因不明の「ログインできない」に見えた）。
+// 何が起きても最低限バナーには出す、という最後の砦としてここに置く。
+window.addEventListener("error", (ev) => {
+  console.error(ev.error || ev.message);
+  Util.showBanner?.(`エラーが発生しました: ${ev.error?.message || ev.message}`, "error");
+});
+window.addEventListener("unhandledrejection", (ev) => {
+  console.error(ev.reason);
+  Util.showBanner?.(`エラーが発生しました: ${ev.reason?.message || ev.reason}`, "error");
+});
+
 (async function main() {
   const client = DB.init();
   if (!client) { showLogin(); return; }
