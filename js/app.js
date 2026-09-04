@@ -35,10 +35,6 @@ const App = (() => {
   function getVisits() { return visits; }
   function findPlace(id) { return places.find((p) => p.id === id) || null; }
 
-  function allGenres() {
-    return [...new Set(places.map((p) => (p.genre || "").trim()).filter(Boolean))].sort();
-  }
-
   // ジャンルは「うどん, カフェ, カレー」のようにカンマ区切りで複数入っていることがあるため、
   // 絞り込みは1つずつに分解してマッチさせる（表示・入力欄はそのままのカンマ区切り表記を保つ）
   function genreTokensOf(p) {
@@ -406,7 +402,7 @@ const App = (() => {
 
   // 「これまで使ったジャンル/タグ」をタップで入れられるように出す
   function renderKnownLists() {
-    const gs = allGenres();
+    const gs = allGenreTokens();
     const gBox = document.getElementById("known-genres");
     gBox.style.display = gs.length ? "block" : "none";
     document.getElementById("known-genres-list").innerHTML =
@@ -633,7 +629,10 @@ const App = (() => {
     // 既存ジャンル/タグのタップ入力
     document.getElementById("known-genres-list").addEventListener("click", (e) => {
       const b = e.target.closest("[data-set-genre]"); if (!b) return;
-      document.getElementById("f-genre").value = b.dataset.setGenre;
+      const input = document.getElementById("f-genre");
+      const cur = Util.parseTags(input.value);
+      if (!cur.includes(b.dataset.setGenre)) cur.push(b.dataset.setGenre);
+      input.value = cur.join(", ");
     });
     document.getElementById("known-tags-list").addEventListener("click", (e) => {
       const b = e.target.closest("[data-add-tag]"); if (!b) return;
