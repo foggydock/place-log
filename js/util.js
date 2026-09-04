@@ -62,6 +62,14 @@ const Util = (() => {
     return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
   }
 
+  // ジャンルは text[]（新）とカンマ区切り text（旧）のどちらの可能性もあるので、
+  // 表示・検索は必ずここを通して配列に揃える（DB移行の前後どちらでも動くように）。
+  function genreList(place) {
+    const g = place?.genre;
+    if (Array.isArray(g)) return g.filter(Boolean);
+    return String(g || "").split(/[,、]/).map((s) => s.trim()).filter(Boolean);
+  }
+
   // "tag1, tag2 , tag3" -> ["tag1","tag2","tag3"]（前後#や空白を除去・重複排除）
   function parseTags(str) {
     return [...new Set(
@@ -105,6 +113,6 @@ const Util = (() => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  return { showView, showBanner, esc, nl2br, todayStr, relDay, daysSince, debounce, parseTags, getCurrentPosition, distanceKm };
+  return { showView, showBanner, esc, nl2br, todayStr, relDay, daysSince, debounce, parseTags, genreList, getCurrentPosition, distanceKm };
 })();
 window.Util = Util;

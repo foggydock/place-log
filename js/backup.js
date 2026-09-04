@@ -28,7 +28,7 @@ const Backup = (() => {
     places.forEach((p) => {
       const star = p.stars ? " " + "★".repeat(p.stars) : "";
       lines.push(`## ${p.name}${star}`);
-      if ((p.genre || []).length) lines.push(`- ジャンル：${p.genre.join(", ")}`);
+      if (Util.genreList(p).length) lines.push(`- ジャンル：${Util.genreList(p).join(", ")}`);
       if (p.area) lines.push(`- エリア：${p.area}`);
       if (p.address) lines.push(`- 場所：${p.address}`);
       if (p.lat != null && p.lng != null) lines.push(`- 座標：${p.lat}, ${p.lng}`);

@@ -9,8 +9,18 @@ let plogInitDone = false;
   wireLogin();
 
   const session = await Auth.refreshSession();
-  if (session) await startApp();
-  else showLogin();
+  if (session) {
+    try {
+      await startApp();
+    } catch (e) {
+      // 黙ってログイン画面に戻ると「ログインできない」と誤解される。必ず理由を出す。
+      console.error(e);
+      showLogin();
+      Util.showBanner(`データの読み込みに失敗しました: ${e.message}`, "error");
+    }
+  } else {
+    showLogin();
+  }
 
   plogInitDone = true;
 
@@ -73,6 +83,13 @@ function wireLogin() {
       fail("ログインは通りましたが、セッションを保存できませんでした。ブラウザのCookie／サイトデータのブロック設定を確認してください。");
       return;
     }
-    await startApp();
+    // 読み込み・描画で落ちても「ログイン中…」のまま固まらないようにする。
+    // 原因が画面に出ないと、ログインの失敗と見分けがつかなくなる。
+    try {
+      await startApp();
+    } catch (e) {
+      console.error(e);
+      fail(`ログインはできましたが、データの読み込みで失敗しました: ${e.message}`);
+    }
   });
 }
